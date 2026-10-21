@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.data.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from .batch import Batch
 
 
 class WorkCenter(BaseModel):
@@ -29,7 +35,7 @@ class WorkCenter(BaseModel):
         onupdate=sa.func.now(),  # pylint: disable=E1102
     )
 
-    batches: Mapped[list["Batch"]] = relationship(back_populates="work_center")
+    batches: Mapped[list[Batch]] = relationship(back_populates="work_center")
 
     def __repr__(self) -> str:
         return f"<WorkCenter(id={self.id}, identifier='{self.identifier}')>"

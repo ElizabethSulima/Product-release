@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.data.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from .batch import Batch
 
 
 class Product(BaseModel):
@@ -33,7 +39,7 @@ class Product(BaseModel):
         server_default=sa.func.now(),  # pylint: disable=E1102
     )
 
-    batch: Mapped["Batch"] = relationship(back_populates="products")
+    batch: Mapped[Batch] = relationship(back_populates="products")
 
     __table_args__ = (
         sa.Index("idx_product_batch_aggregated", "batch_id", "is_aggregated"),

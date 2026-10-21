@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 from datetime import date, datetime
+from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.data.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from .product import Product
+    from .work_center import WorkCenter
 
 
 class Batch(BaseModel):
@@ -58,8 +65,8 @@ class Batch(BaseModel):
         onupdate=sa.func.now(),  # pylint: disable=E1102
     )
 
-    products: Mapped[list["Product"]] = relationship(back_populates="batch")
-    work_center: Mapped["WorkCenter"] = relationship(back_populates="batches")
+    products: Mapped[list[Product]] = relationship(back_populates="batch")
+    work_center: Mapped[WorkCenter] = relationship(back_populates="batches")
 
     __table_args__ = (
         sa.UniqueConstraint(

@@ -28,6 +28,10 @@ class Config(BaseSettings):
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
 
+    # Tasks
+    TASK_POOL_SIZE: int = 5
+    TASK_MAX_OVERFLOW: int = 10
+
     # fastapi app
     APP_NAME: str = "PRODUCT CONTROL SYSTEM"
     APP_VERSION: str = "1.0.0"
@@ -51,11 +55,16 @@ class Config(BaseSettings):
     # Minio
     MINIO_ROOT_USER: str
     MINIO_ROOT_PASSWORD: str
-    MINIO_ENDPOINT: str
+    MINIO_ENDPOINT: str = "minio:8333"
     MINIO_ACCESS_KEY: str
     MINIO_SECRET_KEY: str
     MINIO_SECURE: bool = False
     MINIO_BUCKET_NAME: str = "minio-documents"
+    MINIO_VOLUMES: str
+
+    # Flower
+    FLOWER_USER: str
+    FLOWER_PASSWORD: str
 
     @property
     def is_production(self) -> bool:

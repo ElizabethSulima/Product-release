@@ -11,7 +11,7 @@ uvicorn = { version = "^0.32.0", extras = ["standard"] }
 pydantic = "^2.9.0"
 pydantic-settings = "^2.5.0"
 
-sqlalchemy = { version = "^2.0.35", extras = ["asyncio"] }
+sqlalchemy = { version = "^2.0.35", extras = ["asyncio", "mypy"] }
 asyncpg = "^0.30.0"
 alembic = "^1.13.0"
 greenlet = "^3.1.0"
@@ -22,6 +22,10 @@ redis = "^5.2.0"
 minio = "^7.2.9"
 slowapi = "^0.1.10"
 psycopg = {extras = ["binary"], version = "^3.3.6"}
+flower = "^2.2.0"
+openpyxl = "^3.1.5"
+reportlab = "^5.0.1"
+pandas = "^3.0.6"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -55,7 +59,7 @@ select = [
     "C4",  # flake8-comprehensions
     "SIM", # flake8-simplify
 ]
-ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D107", "E501", "N818", "B008"]
+ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D107", "E501", "N818", "B008", "B904"]
 
 
 [tool.ruff.lint.isort]
@@ -70,9 +74,10 @@ docstring-code-format = true
 [tool.mypy]
 python_version = "3.12"
 strict = true
+explicit_package_bases = true
 plugins = [
     "pydantic.mypy",
-    "sqlalchemy.ext.mypy.plugin"
+    "sqlalchemy.ext.mypy.plugin",
 ]
 exclude = ["migrations/"]
 warn_return_any = true
@@ -92,7 +97,7 @@ init_typed = true
 warn_required_dynamic_aliases = true
 
 [[tool.mypy.overrides]]
-module = ["minio.*", "kombu.*", "amqp.*"]
+module = ["minio.*", "celery.*", "pandas.*", "openpyxl.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

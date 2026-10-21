@@ -12,34 +12,47 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
-from src.api.v1.routers import health
+from src.api.v1.routers import batches, health, product, tasks
 from src.core.config import config
+from src.core.database import dispose_engine
 from src.core.limiter import limiter
+from src.core.middleware.logging import RequestLoggingMiddleware
+from src.core.middleware.request_id import RequestIDMiddleware
+from src.storage.minio_service import minio_service
 
+logging.basicConfig(level=logging.INFO, force=True)
 logger = logging.getLogger(__name__)
 
 
+BUCKETS = {
+    "reports": "Сгенерированные отчеты",
+    "exports": "Экспортированные данные",
+    "imports": "Загруженные файлы для импорта",
+}
+
+
 @asynccontextmanager
-# async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-#     """
-#     Lifecycle manager для FastAPI.
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """
+    Lifecycle manager для FastAPI.
 
-#     Выполняется при:
-#     - startup: настройка логирования
-#     - shutdown: закрытие подключений к БД
-#     """
-#     # Startup
-#     app.state.ol_client = OpenLibraryClient(
-#         base_url=settings.OPENLIBRARY_BASE_URL,
-#         timeout=settings.OPENLIBRARY_TIMEOUT,
-#     )
-#     logger.info("Application started")
-#     yield
-
-#     # Shutdown
-#     await app.state.ol_client.close()
-#     await dispose_engine()
-#     logger.info("Application stopped")
+    Выполняется при:
+    - startup: настройка логирования
+    - shutdown: закрытие подключений к БД
+    """
+    logger.info(
+        "Application %s v%s started", config.APP_NAME, config.APP_VERSION
+    )
+    logger.info("Инициализация MinIO бакетов...")
+    for bucket_name, description in BUCKETS.items():
+        try:
+            minio_service.ensure_bucket_exists(bucket_name)
+            logger.info("Бакет готов: %s (%s)", bucket_name, description)
+        except Exception as e:
+            logger.error("Ошибка с бакетом %s: %s", bucket_name, e)
+    yield
+    await dispose_engine()
+    logger.info("Application stopped successfully")
 
 
 def setup_middleware(app: FastAPI) -> None:
@@ -49,10 +62,10 @@ def setup_middleware(app: FastAPI) -> None:
     Порядок важен: middleware выполняются в обратном порядке добавления.
     """
     # 1. Request ID - должен быть первым, чтобы все логи имели request_id
-    # app.add_middleware(RequestIDMiddleware)
+    app.add_middleware(RequestIDMiddleware)
 
     # # 2. Request logging - логирует все запросы
-    # app.add_middleware(RequestLoggingMiddleware)
+    app.add_middleware(RequestLoggingMiddleware)
 
     # 3. CORS - настраивается один раз
     app.add_middleware(
@@ -102,32 +115,25 @@ def create_app() -> FastAPI:
         redoc_url=config.redoc_url if not config.is_production else None,
         openapi_url=(config.openapi_url if not config.is_production else None),
         description="Система контроля заданий на выпуск продукции",
-        # lifespan=lifespan,
+        lifespan=lifespan,
     )
 
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
     setup_middleware(app)
-    # register_exception_handlers(app)
 
-    # app.include_router(
-    #     books.router,
-    #     prefix=config.API_V1_PREFIX,
-    # )
-    app.include_router(
-        health.router,
-        prefix=config.API_V1_PREFIX,
-    )
-
-    # app.include_router(auth.router, prefix=config.API_V1_PREFIX)
+    app.include_router(health.router, prefix=config.API_V1_PREFIX)
+    app.include_router(batches.router, prefix=config.API_V1_PREFIX)
+    app.include_router(product.router, prefix=config.API_V1_PREFIX)
+    app.include_router(tasks.router, prefix=config.API_V1_PREFIX)
 
     @app.get("/")
     @limiter.limit("200 per minute")
     async def root(request: Request) -> dict[str, str | None]:
-        """Корневой эндпоинт."""
+        """Корневой эндпоинт"""
         response: dict[str, str | None] = {
-            "message": "Welcome to Library Catalog API",
+            "message": "Welcome to Product control system",
             "version": config.APP_VERSION,
         }
         if not config.is_production:

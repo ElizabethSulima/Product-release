@@ -16,9 +16,7 @@ class WebhookSubscription(BaseModel):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     url: Mapped[str] = mapped_column(sa.String(length=2048), nullable=False)
-    events: Mapped[list[str]] = mapped_column(
-        ARRAY(sa.String), nullable=False
-    )  # type: ignore[type-arg]
+    events: Mapped[list[str]] = mapped_column(ARRAY(sa.String), nullable=False)
     secret_key: Mapped[str] = mapped_column(
         sa.String(length=255), nullable=False
     )
