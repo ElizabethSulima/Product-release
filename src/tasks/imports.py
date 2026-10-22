@@ -9,6 +9,7 @@ from celery.app.task import Task
 from sqlalchemy import select
 
 from src.celery_app import celery_app
+from src.core.webhook_dispatcher import trigger_webhook
 from src.data.models.batch import Batch
 from src.tasks.aggregation import AsyncSessionLocal
 
@@ -79,6 +80,15 @@ def import_batches_from_file(
                         errors.append({"row": row_num, "error": str(e)})
 
                 await session.commit()
+            trigger_webhook(
+                event_type="import_completed",
+                data={
+                    "total_rows": total_rows,
+                    "created": created,
+                    "skipped": skipped,
+                    "errors": errors[:50],
+                },
+            )
 
             return {
                 "success": True,

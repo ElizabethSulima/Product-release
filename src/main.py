@@ -12,7 +12,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
-from src.api.v1.routers import batches, health, product, tasks
+from src.api.v1.routers import batches, files, health, product, tasks, webhooks
 from src.core.config import config
 from src.core.database import dispose_engine
 from src.core.limiter import limiter
@@ -127,6 +127,8 @@ def create_app() -> FastAPI:
     app.include_router(batches.router, prefix=config.API_V1_PREFIX)
     app.include_router(product.router, prefix=config.API_V1_PREFIX)
     app.include_router(tasks.router, prefix=config.API_V1_PREFIX)
+    app.include_router(webhooks.router, prefix=config.API_V1_PREFIX)
+    app.include_router(files.router, prefix=config.API_V1_PREFIX)
 
     @app.get("/")
     @limiter.limit("200 per minute")
