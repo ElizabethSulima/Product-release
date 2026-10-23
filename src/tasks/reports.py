@@ -10,6 +10,7 @@ from openpyxl.styles import Font
 from sqlalchemy import select
 
 from src.celery_app import celery_app
+from src.core.webhook_dispatcher import trigger_webhook
 from src.data.models.batch import Batch
 from src.data.models.product import Product
 from src.storage.minio_service import minio_service
@@ -78,6 +79,15 @@ async def _process_report_generation(
         logger.info(
             "Отчёт готов, уведомление будет отправлено на %s", user_email
         )
+    trigger_webhook(
+        event_type="report_generated",
+        data={
+            "batch_id": batch_id,
+            "report_type": report_format,
+            "file_url": file_url,
+            "expires_at": expires_at,
+        },
+    )
 
     return {
         "success": True,

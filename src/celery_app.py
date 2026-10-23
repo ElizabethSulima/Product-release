@@ -42,6 +42,10 @@ celery_app.conf.update(
             "task": "src.tasks.scheduler.retry_failed_webhooks",
             "schedule": crontab(minute="*/15"),
         },
+        "warmup-dashboard": {
+            "task": "src.tasks.scheduler.warmup_dashboard_cache",
+            "schedule": crontab(minute="*/5"),
+        },
     },
 )
 
