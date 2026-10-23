@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, cast
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.data.models.batch import Batch
 from src.data.models.product import Product
 
 
@@ -95,3 +96,109 @@ class ProductRepository:
             .where(Product.batch_id == batch_id)
         )
         return await self.session.scalar(stmt) or 0
+
+    async def count_all(self) -> int:
+        """Подсчитать общее количество продукции"""
+        stmt = sa.select(sa.func.count()).select_from(  # pylint: disable=E1102
+            Product
+        )
+        return await self.session.scalar(stmt) or 0
+
+    async def count_aggregated(self) -> int:
+        """Подсчитать количество агрегированной продукции"""
+        stmt = (
+            sa.select(sa.func.count())  # pylint: disable=E1102
+            .select_from(Product)
+            .where(Product.is_aggregated.is_(True))
+        )
+        return await self.session.scalar(stmt) or 0
+
+    async def count_by_batch_id_aggregated(self, batch_id: int) -> int:
+        """Подсчитать агрегированную продукцию в конкретной партии"""
+        stmt = (
+            sa.select(sa.func.count())  # pylint: disable=E1102
+            .select_from(Product)
+            .where(
+                Product.batch_id == batch_id,
+                Product.is_aggregated.is_(True),
+            )
+        )
+        return await self.session.scalar(stmt) or 0
+
+    async def count_products_added_today(self) -> int:
+        """Подсчитать количество продукции, добавленной сегодня"""
+
+        today_start = datetime.now(UTC).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        stmt = (
+            sa.select(sa.func.count())  # pylint: disable=E1102
+            .select_from(Product)
+            .where(Product.created_at >= today_start)
+        )
+        return await self.session.scalar(stmt) or 0
+
+    async def count_aggregated_today(self) -> int:
+        """Подсчитать количество продукции, агрегированной сегодня"""
+
+        today_start = datetime.now(UTC).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        stmt = (
+            sa.select(sa.func.count())  # pylint: disable=E1102
+            .select_from(Product)
+            .where(
+                Product.is_aggregated.is_(True),
+                Product.aggregated_at >= today_start,
+            )
+        )
+        return await self.session.scalar(stmt) or 0
+
+    async def count_products_by_shift(self) -> dict[str, dict[str, int]]:
+        """
+        Подсчитать продукцию по сменам: {shift: {products, aggregated}}
+        """
+        stmt = (
+            sa.select(
+                Batch.shift,
+                sa.func.count(Product.id).label(  # pylint: disable=E1102
+                    "products"
+                ),
+                sa.func.sum(
+                    sa.case((Product.is_aggregated.is_(True), 1), else_=0)
+                ).label("aggregated"),
+            )
+            .join(Batch, Product.batch_id == Batch.id)
+            .group_by(Batch.shift)
+        )
+        result = await self.session.execute(stmt)
+        return {
+            str(row.shift or "unknown"): {
+                "products": int(row.products or 0),
+                "aggregated": int(row.aggregated or 0),
+            }
+            for row in result.all()
+        }
+
+    async def count_aggregated_by_work_center(
+        self, work_center_ids: list[int]
+    ) -> dict[int, int]:
+        """Подсчитать агрегированную продукцию по рабочим центрам"""
+
+        if not work_center_ids:
+            return {}
+
+        stmt = (
+            sa.select(
+                Batch.work_center_id,
+                sa.func.count(Product.id),  # pylint: disable=E1102
+            )
+            .join(Batch, Product.batch_id == Batch.id)
+            .where(
+                Batch.work_center_id.in_(work_center_ids),
+                Product.is_aggregated.is_(True),
+            )
+            .group_by(Batch.work_center_id)
+        )
+        result = await self.session.execute(stmt)
+        return {int(row[0]): int(row[1]) for row in result.all()}

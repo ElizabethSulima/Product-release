@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,10 @@ from src.core.limiter import limiter
 from src.core.webhook_dispatcher import trigger_webhook
 from src.data.models.batch import Batch
 from src.domain.services.batch import BatchService
+from src.domain.services.cache_invalidator import (
+    on_batch_created,
+    on_batch_updated,
+)
 from src.tasks.aggregation import aggregate_products_batch
 from src.tasks.reports import generate_batch_report
 
@@ -52,6 +57,7 @@ async def create_batches(
         for item in payload
     ]
     created_batches = await service.create_batches_bulk(batches)
+    await on_batch_created()
     for batch in created_batches:
         trigger_webhook(
             event_type="batch_created",
@@ -118,6 +124,7 @@ async def update_batch(
         )
 
     batch = await service.update_batch(batch_id, update_data)
+    await on_batch_updated(batch_id)
     if not batch:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Партия не найдена"
@@ -204,3 +211,23 @@ async def create_batch_report(
     )
 
     return ReportTaskResponse(task_id=task.id, status="PENDING")
+
+
+@router.get(
+    "/{batch_id}/statistics",
+    summary="Расширенная статистика партии",
+)
+@limiter.limit("30 per minute")
+async def get_batch_statistics(
+    request: Request,
+    batch_id: int,
+    session: AsyncSessionDependency,
+) -> dict[str, Any]:
+    service = BatchService(session)
+    stats = await service.get_batch_statistics_cached(batch_id)
+    if stats is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Партия не найдена",
+        )
+    return stats

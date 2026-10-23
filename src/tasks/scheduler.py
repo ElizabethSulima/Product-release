@@ -9,6 +9,7 @@ from src.celery_app import celery_app
 from src.core.webhook_dispatcher import trigger_webhook
 from src.data.models.batch import Batch
 from src.data.models.webhook import WebhookDelivery, WebhookSubscription
+from src.domain.services.analytics import AnalyticsService
 from src.storage.minio_service import minio_service
 from src.tasks.aggregation import AsyncSessionLocal
 from src.tasks.webhooks import send_webhook_delivery
@@ -73,11 +74,19 @@ def cleanup_old_files() -> None:
 
 
 @celery_app.task  # type: ignore[untyped-decorator]
-def update_cached_statistics() -> None:
-    """Обновляет кэшированную статистику в Redis"""
-    # from src.core.redis_client import redis_client
-    # asyncio.run(_update_stats())
-    pass
+def update_cached_statistics() -> dict[str, str]:
+    """
+    Обновляет кэшированную статистику в Redis
+    """
+
+    async def _warmup() -> str:
+        async with AsyncSessionLocal() as session:
+            service = AnalyticsService(session)
+            await service.get_dashboard_statistics()
+        return "ok"
+
+    result = asyncio.run(_warmup())
+    return {"status": result}
 
 
 async def _retry_failed() -> dict[str, int]:
@@ -126,3 +135,17 @@ def retry_failed_webhooks() -> dict[str, int]:
     Запускается: каждые 15 минут через Celery Beat.
     """
     return asyncio.run(_retry_failed())
+
+
+@celery_app.task  # type: ignore[untyped-decorator]
+def warmup_dashboard_cache() -> dict[str, str]:
+    """Принудительное обновление кэша дашборда"""
+
+    async def _warmup() -> str:
+        async with AsyncSessionLocal() as session:
+            service = AnalyticsService(session)
+            await service.get_dashboard_statistics()
+        return "ok"
+
+    result = asyncio.run(_warmup())
+    return {"status": result}

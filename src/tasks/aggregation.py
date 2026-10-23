@@ -9,9 +9,9 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from src.celery_app import celery_app
 from src.core.config import config
 from src.data.models.product import Product
+from src.domain.services.cache_invalidator import on_product_aggregated
 
 logger = logging.getLogger(__name__)
-
 
 engine = create_async_engine(
     config.database_url,
@@ -91,6 +91,7 @@ async def _process_aggregation(
                     .values(is_aggregated=True)
                 )
                 await session.commit()
+                await on_product_aggregated(batch_id)
                 aggregated_count += len(codes_to_update)
 
             current_processed = i + len(chunk)
