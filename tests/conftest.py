@@ -1,6 +1,6 @@
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -217,8 +217,8 @@ async def db_batch(
         batch_date=date(2026, 10, 26),
         nomenclature="Номенклатура из БД",
         ekn_code="ЕКН-TEST",
-        shift_start=datetime(2026, 10, 26, 20, 0, 0, tzinfo=timezone.utc),
-        shift_end=datetime(2026, 10, 27, 4, 0, 0, tzinfo=timezone.utc),
+        shift_start=datetime(2026, 10, 26, 20, 0, 0, tzinfo=UTC),
+        shift_end=datetime(2026, 10, 27, 4, 0, 0, tzinfo=UTC),
     )
     db_session.add(batch)
     await db_session.flush()
