@@ -21,7 +21,8 @@ jobs:
           - "5432:5432"
         options: >-
           --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
+          --health-interval 10s
+          --health-timeout 5s
           --health-retries 5
 
     steps:
@@ -46,6 +47,9 @@ jobs:
           pip install poetry
           poetry config virtualenvs.create false
           poetry install --no-interaction --no-root
+
+      - name: Create test database
+        run: PGPASSWORD=postgres psql -h localhost -U postgres -d test_db -c "CREATE DATABASE test_db_test;"
 
       - name: Lint and Type Check
         run: |

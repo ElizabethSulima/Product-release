@@ -27,8 +27,8 @@ async def get_task_status(task_id: str) -> dict[str, Any]:
     elif task.status == "SUCCESS":
         response["result"] = task.result
     elif task.status == "FAILURE":
-        response["result"] = str(task.info)
-        response["message"] = "Task failed"
+        response["result"] = None
+        response["message"] = f"Task failed: {task.info}"
     else:
         response["status"] = task.status
 

@@ -38,7 +38,6 @@ async def create_product(
     product = Product(
         batch_id=payload.batch_id,
         unique_code=payload.unique_code,
-        ekn_code=payload.ekn_code,
     )
     created_product = await product_service.create_product(product)
     return ProductResponse.model_validate(

@@ -27,6 +27,7 @@ openpyxl = "^3.1.5"
 reportlab = "^5.0.1"
 pandas = "^3.0.6"
 python-multipart = "^0.0.32"
+fakeredis = "^2.40.0"
 
 
 [tool.poetry.group.dev.dependencies]
