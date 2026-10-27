@@ -846,6 +846,32 @@ files = [
 ]
 
 [[package]]
+name = "fakeredis"
+version = "2.40.0"
+description = "Python implementation of redis API, can be used for testing purposes."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "fakeredis-2.40.0-py3-none-any.whl", hash = "sha256:b155ef2442134372eb1cc5664cf5638ccbe0a6dde9d1942153708e2782f315c9"},
+    {file = "fakeredis-2.40.0.tar.gz", hash = "sha256:16eb05a3e97c37a033c73d1da7e885eb2aa47ba7604cc377144339efa2780a02"},
+]
+
+[package.dependencies]
+redis = ">=4.3"
+sortedcontainers = ">=2"
+
+[package.extras]
+bf = ["pyprobables (>=0.6)"]
+cf = ["pyprobables (>=0.6)"]
+digest = ["xxhash (>=3)"]
+json = ["jsonpath-ng (>=1.6)"]
+lua = ["lupa (>=2.1)"]
+probabilistic = ["pyprobables (>=0.6)"]
+valkey = ["valkey (>=6)"]
+vectorset = ["jsonpath-ng (>=1.6) ; python_version >= \"3.11\"", "numpy (>=2.4.0) ; python_version >= \"3.11\""]
+
+[[package]]
 name = "fastapi"
 version = "0.115.14"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
@@ -2851,6 +2877,18 @@ files = [
 ]
 
 [[package]]
+name = "sortedcontainers"
+version = "2.4.0"
+description = "Sorted Containers -- Sorted List, Sorted Dict, Sorted Set"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"},
+    {file = "sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88"},
+]
+
+[[package]]
 name = "sqlalchemy"
 version = "2.0.55"
 description = "Database Abstraction Library"
@@ -3563,4 +3601,4 @@ dev = ["pytest", "setuptools"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "e7b9e1b75cd88ac213cc1300a63158e297f59534dce30e7c5bbebf10ca9db797"
+content-hash = "11b97ec5ef6d12daf88e334792ae9a6ce3629335581e2339b8eb326e4ec422a6"

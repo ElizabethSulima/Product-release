@@ -10,7 +10,6 @@ class ProductCreate(BaseModel):
 
     batch_id: int
     unique_code: str = Field(max_length=50)
-    ekn_code: str = Field(max_length=100)
 
 
 class ProductResponse(BaseModel):
